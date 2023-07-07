@@ -1,0 +1,53 @@
+mport requests
+from bs4 import BeautifulSoup
+
+def scrape_products(url):
+    response = requests.get(url)
+    soup = BeautifulSoup(response.text, 'html.parser')
+    products = soup.find_all('div', {'data-component-type': 's-search-result'})
+
+    results = []
+    for product in products:
+        product_url = product.find('a', {'class': 'a-link-normal s-no-outline'})['href']
+        product_name = product.find('span', {'class': 'a-size-medium a-color-base a-text-normal'}).text.strip()
+        product_price = product.find('span', {'class': 'a-offscreen'}).text.strip()
+        product_rating = product.find('span', {'class': 'a-icon-alt'}).text.strip().split()[0]
+        product_reviews = product.find('span', {'class': 'a-size-base'}).text.strip()
+        product_description = soup.find('div', {'id': 'productDescription'}).text.strip()[0]
+        product_asin = soup.find('th', text='ASIN').find_next_sibling('td').text.strip()
+        product_manufacturer = soup.find('th', text='Manufacturer').find_next_sibling('td').text.strip()
+
+        results.append({
+            'url': product_url,
+            'name': product_name,
+            'price': product_price,
+            'rating': product_rating,
+            'reviews': product_reviews,
+            'description': product_description,
+            'asin': product_asin,
+            'manufacturer': product_manufacturer
+        })
+
+    return results
+
+def scrape_amazon_products(keyword, num_pages):
+    base_url = f'https://www.amazon.in/s?k={keyword}&crid=2M096C61O4MLT&qid=1653308124&sprefix=ba%2Caps%2C283&ref=sr_pg_'
+    
+    all_results = []
+    for page in range(1, num_pages + 1):
+        url = base_url + str(page)
+        results = scrape_products(url)
+        all_results.extend(results)
+
+    return all_results
+
+for result in results:
+    print('URL:', result['url'])
+    print('Name:', result['name'])
+    print('Price:', result['price'])
+    print('Rating:', result['rating'])
+    print('Reviews:', result['reviews'])
+    print('Description:', result['description'])
+    print('ASIN:', result['asin'])
+    print('Manufacturer:', result['manufacturer'])
+    print()
